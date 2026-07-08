@@ -120,6 +120,8 @@ pub enum CosmosReadConsistencyStrategy {
     CosmosReadConsistencyStrategySession = 3,
     /// Read the latest version across all regions (single-master / Strong).
     CosmosReadConsistencyStrategyGlobalStrong = 4,
+    /// Read the latest committed version from the region in preferred order.
+    CosmosReadConsistencyStrategyLatestCommitted = 5,
 }
 
 impl CosmosReadConsistencyStrategy {
@@ -138,6 +140,7 @@ impl CosmosReadConsistencyStrategy {
             2 => Self::CosmosReadConsistencyStrategyEventual,
             3 => Self::CosmosReadConsistencyStrategySession,
             4 => Self::CosmosReadConsistencyStrategyGlobalStrong,
+            5 => Self::CosmosReadConsistencyStrategyLatestCommitted,
             _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
         })
     }
@@ -150,6 +153,9 @@ impl CosmosReadConsistencyStrategy {
             Self::CosmosReadConsistencyStrategySession => Some(ReadConsistencyStrategy::Session),
             Self::CosmosReadConsistencyStrategyGlobalStrong => {
                 Some(ReadConsistencyStrategy::GlobalStrong)
+            }
+            Self::CosmosReadConsistencyStrategyLatestCommitted => {
+                Some(ReadConsistencyStrategy::LatestCommitted)
             }
         })
     }

@@ -63,6 +63,14 @@ pub(crate) mod request_header_names {
     pub const OFFER_AUTOPILOT_SETTINGS: &str = "x-ms-cosmos-offer-autopilot-settings";
     pub const PRIORITY_LEVEL: &str = "x-ms-cosmos-priority-level";
     pub const THROUGHPUT_BUCKET: &str = "x-ms-cosmos-throughput-bucket";
+    /// Per-request read consistency strategy override
+    /// (`x-ms-cosmos-read-consistency-strategy`). The Gateway honors this
+    /// header and applies the requested read consistency for the operation,
+    /// independent of the account's default consistency level. Emitted for any
+    /// explicitly requested strategy other than
+    /// [`ReadConsistencyStrategy::Default`](crate::options::ReadConsistencyStrategy::Default),
+    /// which means "inherit" and sends no header.
+    pub const READ_CONSISTENCY_STRATEGY: &str = "x-ms-cosmos-read-consistency-strategy";
     pub const START_EPK: &str = "x-ms-start-epk";
     pub const END_EPK: &str = "x-ms-end-epk";
     pub const READ_FEED_KEY_TYPE: &str = "x-ms-read-key-type";

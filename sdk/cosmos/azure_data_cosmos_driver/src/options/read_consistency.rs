@@ -32,6 +32,14 @@ pub enum ReadConsistencyStrategy {
     /// (your writes are immediately visible to your reads) within any single session.
     Session,
 
+    /// Reads the latest committed version from the region in preferred order.
+    ///
+    /// The read region might have stale data relative to other regions, but this
+    /// strategy always returns the latest committed (non-tentative) version available
+    /// in that region. In gateway mode this is applied by requesting bounded-staleness
+    /// consistency on the wire.
+    LatestCommitted,
+
     /// Reads the latest version across all regions.
     ///
     /// Since replication with global strong consistency is synchronous, this read
@@ -54,6 +62,7 @@ impl ReadConsistencyStrategy {
             "Default" => Some(Self::Default),
             "Eventual" => Some(Self::Eventual),
             "Session" => Some(Self::Session),
+            "LatestCommitted" => Some(Self::LatestCommitted),
             "GlobalStrong" => Some(Self::GlobalStrong),
             _ => {
                 // Case-insensitive fallback
@@ -63,6 +72,8 @@ impl ReadConsistencyStrategy {
                     Some(Self::Eventual)
                 } else if s.eq_ignore_ascii_case("Session") {
                     Some(Self::Session)
+                } else if s.eq_ignore_ascii_case("LatestCommitted") {
+                    Some(Self::LatestCommitted)
                 } else if s.eq_ignore_ascii_case("GlobalStrong") {
                     Some(Self::GlobalStrong)
                 } else {
@@ -78,6 +89,7 @@ impl ReadConsistencyStrategy {
             Self::Default => "Default",
             Self::Eventual => "Eventual",
             Self::Session => "Session",
+            Self::LatestCommitted => "LatestCommitted",
             Self::GlobalStrong => "GlobalStrong",
         }
     }
@@ -138,6 +150,10 @@ mod tests {
             Some(ReadConsistencyStrategy::Session)
         );
         assert_eq!(
+            "LatestCommitted".parse::<ReadConsistencyStrategy>().ok(),
+            Some(ReadConsistencyStrategy::LatestCommitted)
+        );
+        assert_eq!(
             "GlobalStrong".parse::<ReadConsistencyStrategy>().ok(),
             Some(ReadConsistencyStrategy::GlobalStrong)
         );
@@ -163,6 +179,7 @@ mod tests {
             ReadConsistencyStrategy::Default,
             ReadConsistencyStrategy::Eventual,
             ReadConsistencyStrategy::Session,
+            ReadConsistencyStrategy::LatestCommitted,
             ReadConsistencyStrategy::GlobalStrong,
         ] {
             let s = strategy.to_string();
@@ -202,6 +219,8 @@ mod tests {
     #[test]
     fn not_session_effective_for_eventual_or_global_strong() {
         assert!(!ReadConsistencyStrategy::Eventual
+            .is_session_effective(DefaultConsistencyLevel::Session));
+        assert!(!ReadConsistencyStrategy::LatestCommitted
             .is_session_effective(DefaultConsistencyLevel::Session));
         assert!(!ReadConsistencyStrategy::GlobalStrong
             .is_session_effective(DefaultConsistencyLevel::Session));

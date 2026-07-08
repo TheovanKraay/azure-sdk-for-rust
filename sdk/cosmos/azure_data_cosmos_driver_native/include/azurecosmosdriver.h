@@ -586,6 +586,10 @@ enum cosmos_CosmosReadConsistencyStrategy
    * Read the latest version across all regions (single-master / Strong).
    */
   COSMOS_READ_CONSISTENCY_STRATEGY_GLOBAL_STRONG = 4,
+  /**
+   * Read the latest committed version from the region in preferred order.
+   */
+  COSMOS_READ_CONSISTENCY_STRATEGY_LATEST_COMMITTED = 5,
 };
 #ifndef __cplusplus
 #if __STDC_VERSION__ >= 202311L

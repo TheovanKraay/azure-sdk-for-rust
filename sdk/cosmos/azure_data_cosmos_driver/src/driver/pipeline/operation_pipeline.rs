@@ -1691,6 +1691,19 @@ fn apply_optional_request_headers(
         );
     }
 
+    // Read consistency strategy override. The Gateway applies the requested
+    // read consistency independent of the account default when this header is
+    // present. `Default` means "inherit" and emits no header (matching the
+    // Java SDK, which skips the wire value for `DEFAULT`).
+    if let Some(strategy) = options.read_consistency_strategy() {
+        if *strategy != ReadConsistencyStrategy::Default {
+            transport_request.headers.insert(
+                request_header_names::READ_CONSISTENCY_STRATEGY,
+                HeaderValue::from_static(strategy.as_str()),
+            );
+        }
+    }
+
     if let Some(custom_headers) = options.custom_headers() {
         for (name, value) in custom_headers {
             if !transport_request.headers.iter().any(|(n, _)| n == name) {

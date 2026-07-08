@@ -59,6 +59,15 @@ pub(crate) struct ParsedRequest {
     pub session_token: Option<String>,
     pub activity_id: Option<String>,
     pub content_response_on_write: bool,
+    /// Per-request read consistency strategy from the
+    /// `x-ms-cosmos-read-consistency-strategy` header, if present (e.g.
+    /// `"Eventual"`, `"Session"`, `"LatestCommitted"`, `"GlobalStrong"`).
+    ///
+    /// When the request explicitly requests a non-Session read consistency,
+    /// the emulator skips the account-default Session token check so the read
+    /// behaves like the requested strategy (the Gateway applies the same
+    /// override server-side).
+    pub read_consistency_strategy: Option<String>,
     /// Provisioned RU/s parsed from the `x-ms-offer-throughput` request header.
     /// Forwarded to container creation so the emulator honors caller-specified
     /// throughput instead of silently falling back to `ContainerConfig::default()`
@@ -108,6 +117,8 @@ static IS_BATCH_REQUEST: HeaderName = HeaderName::from_static("x-ms-cosmos-is-ba
 static OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
 static OFFER_AUTOPILOT_SETTINGS: HeaderName =
     HeaderName::from_static("x-ms-cosmos-offer-autopilot-settings");
+static READ_CONSISTENCY_STRATEGY: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-read-consistency-strategy");
 
 /// Parses an HTTP request into a `ParsedRequest`.
 pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
@@ -124,6 +135,9 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         .map(|s| s.to_string());
     let session_token = headers
         .get_optional_str(&SESSION_TOKEN)
+        .map(|s| s.to_string());
+    let read_consistency_strategy = headers
+        .get_optional_str(&READ_CONSISTENCY_STRATEGY)
         .map(|s| s.to_string());
     let activity_id = headers
         .get_optional_str(&ACTIVITY_ID)
@@ -216,6 +230,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         session_token,
         activity_id,
         content_response_on_write,
+        read_consistency_strategy,
         offer_throughput,
         offer_autopilot_settings,
         max_item_count,

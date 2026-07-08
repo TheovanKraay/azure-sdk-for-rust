@@ -642,6 +642,7 @@ pub(crate) async fn handle_operation(
             session_token: operation.session_token.clone(),
             activity_id: None,
             content_response_on_write: true,
+            read_consistency_strategy: None,
             offer_throughput: None,
             offer_autopilot_settings: None,
             max_item_count: None,
@@ -1446,6 +1447,7 @@ pub(crate) async fn handle_operation(
             session_token: operation.session_token.clone(),
             activity_id: None,
             content_response_on_write: true,
+            read_consistency_strategy: None,
             offer_throughput: None,
             offer_autopilot_settings: None,
             max_item_count: None,
@@ -3877,7 +3879,23 @@ fn handle_read(
         // a token that the partition trivially satisfies and treat the
         // failure as transient. Echoing back what they asked for makes the
         // mismatch visible.
-        if store.config().consistency().is_session() {
+        //
+        // A request that explicitly requests a non-Session read consistency
+        // strategy (via `x-ms-cosmos-read-consistency-strategy`) overrides the
+        // account default, so the Session token check is skipped and the read
+        // behaves like the requested strategy — mirroring the Gateway, which
+        // applies the same override server-side. `Session`/`Default` (or an
+        // absent header) leave account-default Session enforcement in place.
+        let session_overridden_by_strategy = parsed
+            .read_consistency_strategy
+            .as_deref()
+            .map(|s| {
+                s.eq_ignore_ascii_case("Eventual")
+                    || s.eq_ignore_ascii_case("LatestCommitted")
+                    || s.eq_ignore_ascii_case("GlobalStrong")
+            })
+            .unwrap_or(false);
+        if store.config().consistency().is_session() && !session_overridden_by_strategy {
             if let Some(session_header) = &parsed.session_token {
                 let tokens = match super::session::parse_composite_session_token(session_header) {
                     Ok(tokens) => tokens,
